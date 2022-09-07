@@ -16,7 +16,6 @@ object ConvertKtFileDelegate {
      */
     fun perform(
         projectInfo: ProjectInfo,
-        isUsingViewBindingPropertyDelegate: Boolean = false,
     ) {
         val xmlRefsVisitor = AndroidViewXmlSyntheticsRefsVisitor()
         val importsVisitor = SyntheticsImportsVisitor()
@@ -24,7 +23,7 @@ object ConvertKtFileDelegate {
         projectInfo.file.accept(importsVisitor)
         val xmlViewRefs = xmlRefsVisitor.getResult()
         val syntheticImports = importsVisitor.getResult()
-        val viewBindingPsiProcessor = getViewBindingPsiProcessor(projectInfo, isUsingViewBindingPropertyDelegate)
+        val viewBindingPsiProcessor = getViewBindingPsiProcessor(projectInfo)
 
         val viewBindingDelegate = ViewBindingDelegate(
             projectInfo = projectInfo,
@@ -45,15 +44,7 @@ object ConvertKtFileDelegate {
 
     private fun getViewBindingPsiProcessor(
         projectInfo: ProjectInfo,
-        isUsingViewBindingPropertyDelegate: Boolean,
-    ) = when {
-        isUsingViewBindingPropertyDelegate -> {
-            HHViewBindingPsiProcessor(projectInfo)
-        }
-        else -> {
-            CommonViewBindingPsiProcessor(projectInfo)
-        }
-    }
+    ) = DelegateViewBindingPsiProcessor(projectInfo)
 
     private fun replaceSynthCallsToViews(
         psiFactory: KtPsiFactory,

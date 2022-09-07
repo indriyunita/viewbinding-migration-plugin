@@ -8,12 +8,15 @@ import ru.hh.android.synthetic_plugin.model.ProjectInfo
 import ru.hh.android.synthetic_plugin.utils.ClassParentsFinder
 import ru.hh.android.synthetic_plugin.utils.Const
 
-class HHViewBindingPsiProcessor(
+class DelegateViewBindingPsiProcessor(
     projectInfo: ProjectInfo,
 ) : ViewBindingPsiProcessor(
     projectInfo,
 ) {
     private companion object {
+        const val IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING = "android.viewbinding.library.fragment.viewBinding"
+        const val IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING = "android.viewbinding.library.activity.viewBinding"
+
         const val HH_IMPORT_BINDING_PLUGIN =
             "ru.hh.shared.core.ui.framework.fragment_plugin.common.viewbinding.viewBindingPlugin"
 
@@ -25,9 +28,6 @@ class HHViewBindingPsiProcessor(
         const val HH_CELL_INTERFACE = "ru.hh.shared.core.ui.cells_framework.cells.interfaces.Cell"
     }
 
-    /**
-     * Left for single case - HH cell processing
-     */
     private val bindingClassName = importDirectives.firstOrNull()
 
     override fun processActivity(ktClass: KtClass) {
@@ -39,7 +39,7 @@ class HHViewBindingPsiProcessor(
             tryToAddAfterCompanionObject(body, viewBindingDeclaration)
 
             addImports(
-                HH_IMPORT_BINDING_PLUGIN,
+                IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING,
             )
         }
     }
@@ -53,7 +53,7 @@ class HHViewBindingPsiProcessor(
             tryToAddAfterCompanionObject(body, viewBindingDeclaration)
 
             addImports(
-                HH_IMPORT_BINDING_PLUGIN,
+                IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING,
             )
         }
     }

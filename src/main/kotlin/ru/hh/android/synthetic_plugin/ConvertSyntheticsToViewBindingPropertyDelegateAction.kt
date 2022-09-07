@@ -49,8 +49,7 @@ class ConvertSyntheticsToViewBindingPropertyDelegateAction : AnAction() {
 
         project.executeWriteCommand(COMMAND_NAME) {
             ConvertKtFileDelegate.perform(
-                projectInfo = projectInfo,
-                isUsingViewBindingPropertyDelegate = true,
+                projectInfo = projectInfo
             )
         }
     }
