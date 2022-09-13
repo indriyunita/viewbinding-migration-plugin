@@ -26,7 +26,7 @@ class ViewBindingDelegate(
     }
 
     fun addViewBindingProperties() {
-        // `as Array<PsiClass` is necessary because of MISSING_DEPENDENCY_CLASS error from Kotlin Gradle plugin
+        // `as Array<PsiClass>` is necessary because of MISSING_DEPENDENCY_CLASS error from Kotlin Gradle plugin
         // https://youtrack.jetbrains.com/issue/KTIJ-19485
         // https://youtrack.jetbrains.com/issue/KTIJ-10861
         val classes = (projectInfo.file.getClasses() as Array<PsiClass>).mapNotNull { psiClass ->

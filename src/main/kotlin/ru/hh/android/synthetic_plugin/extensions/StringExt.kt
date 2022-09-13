@@ -1,6 +1,8 @@
 package ru.hh.android.synthetic_plugin.extensions
 
 import android.databinding.tool.ext.toCamelCase
+import org.jetbrains.kotlin.lombok.utils.decapitalize
+import ru.hh.android.synthetic_plugin.model.IncludeData
 import ru.hh.android.synthetic_plugin.utils.Const
 import ru.hh.android.synthetic_plugin.utils.Const.SET_CONTENT_VIEW_PREFIX
 
@@ -54,11 +56,17 @@ fun String.toImmutablePropertyFormat(
 
 fun String.toDelegatePropertyFormat(
     hasMultipleBindingsInFile: Boolean = true,
+    include: IncludeData = IncludeData.NoInclude
 ): String {
     return if (hasMultipleBindingsInFile) {
-        "private val ${this.decapitalize()} by viewBindingPlugin($this::bind)"
+        if (include is IncludeData.Include) {
+            "private val ${this.decapitalize()} : $this = " +
+                    "${include.includingBindingClassName.decapitalize()}.${include.includeId}"
+        } else {
+            "private val ${this.decapitalize()}: $this by viewBinding()"
+        }
     } else {
-        "private val binding by viewBindingPlugin($this::bind)"
+        "private val binding: $this by viewBinding()"
     }
 }
 
@@ -121,4 +129,12 @@ fun String.toFragmentDisposingFormat(
     } else {
         "_binding = null"
     }
+}
+
+fun String.getMainDirPath(): String? {
+    val idx = this.indexOf(Const.MAIN_DIR_IDENTIFIER)
+    if (idx == -1) {
+        return null
+    }
+    return this.substring(0, idx + Const.MAIN_DIR_IDENTIFIER.length)
 }

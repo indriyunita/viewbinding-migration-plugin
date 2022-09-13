@@ -9,9 +9,19 @@ import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.resolve.ImportPath
-import ru.hh.android.synthetic_plugin.extensions.*
+import ru.hh.android.synthetic_plugin.extensions.getIncludedViewId
+import ru.hh.android.synthetic_plugin.extensions.getMainDirPath
+import ru.hh.android.synthetic_plugin.extensions.getPackageName
+import ru.hh.android.synthetic_plugin.extensions.isKotlinSynthetic
+import ru.hh.android.synthetic_plugin.extensions.notifyError
+import ru.hh.android.synthetic_plugin.extensions.toFormattedBindingName
+import ru.hh.android.synthetic_plugin.extensions.toFormattedDirective
+import ru.hh.android.synthetic_plugin.model.IncludeData
 import ru.hh.android.synthetic_plugin.model.ProjectInfo
 import ru.hh.android.synthetic_plugin.utils.ClassParentsFinder
+import ru.hh.android.synthetic_plugin.utils.Const
+import ru.hh.android.synthetic_plugin.utils.Const.ERROR_INCLUDE_NO_ID
+import java.io.File
 
 abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
 
@@ -32,37 +42,118 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
         projectInfo.file.importDirectives.filter { it.importPath?.pathStr.isKotlinSynthetic() }
 
     /**
+     * Return map of layout name (e.g. activity_main) to its binding class name (e.g. ActivityMainBinding)
+     */
+    private val layoutAndBindingMap: HashMap<String, String> =
+        hashMapOf<String, String>().apply {
+            syntheticImportDirectives.forEach { directive ->
+                directive.text?.let { importPath ->
+                    val layoutName = importPath.replace("import ", "")
+                        .replace(Const.KOTLINX_SYNTHETIC, "")
+                        .replace(".*", "")
+                    val bindingName = directive.toFormattedDirective().toFormattedBindingName()
+                    put(layoutName, bindingName)
+                }
+            }
+        }
+
+    /**
+     * Return map of binding class name with its include data if any (includeId and includingBindingClass).
+     * If there is more than one binding in a class, we try all the possible include configurations
+     */
+    val bindingsWithIncludeMap: HashMap<String, IncludeData> by lazy {
+        hashMapOf<String, IncludeData>().apply {
+            // init
+            layoutAndBindingMap.values.forEach { bindingClass -> this[bindingClass] = IncludeData.NoInclude }
+
+            projectInfo.file.virtualFilePath.getMainDirPath()?.let { mainDirPath ->
+
+                val keys = layoutAndBindingMap.keys
+                for (i in keys.indices) {
+                    val layoutName1 = keys.elementAt(i)
+                    val bindingClass1 = layoutAndBindingMap[layoutName1].orEmpty()
+
+                    for (j in i + 1..keys.indices.last) {
+                        val layoutName2 = keys.elementAt(j)
+                        val bindingClass2 = layoutAndBindingMap[layoutName2].orEmpty()
+
+                        // only check include if there is no previous entry
+                        if (this[bindingClass1] == IncludeData.NoInclude) {
+                            val incl = getIncludeData(
+                                mainDirPath = mainDirPath,
+                                includedLayoutName = layoutName1,
+                                includingLayoutName = layoutName2,
+                                includingBindingClass = bindingClass2
+                            ).also {
+                                // don't override if already exists
+                                this[bindingClass1] = it
+                            }
+
+                            // if layout A contains layout B, no need to check vice versa because
+                            // it's an impossible scenario
+                            if (incl is IncludeData.Include) {
+                                continue
+                            }
+                        }
+
+                        getIncludeData(
+                            mainDirPath = mainDirPath,
+                            includedLayoutName = layoutName2,
+                            includingLayoutName = layoutName1,
+                            includingBindingClass = bindingClass1
+                        ).also {
+                            if (this[bindingClass2] == IncludeData.NoInclude) {
+                                this[bindingClass2] = it
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getIncludeData(
+        mainDirPath: String,
+        includedLayoutName: String,
+        includingLayoutName: String,
+        includingBindingClass: String
+    ): IncludeData {
+        val xmlFile = File(mainDirPath, Const.LAYOUT_DIR + includingLayoutName + ".xml")
+        val id = xmlFile.getIncludedViewId(includedLayoutName)
+        if (id == ERROR_INCLUDE_NO_ID) {
+            projectInfo.project.notifyError("No include id for layout $includedLayoutName in $includingLayoutName")
+        }
+
+        return if (id == null) IncludeData.NoInclude else
+            IncludeData.Include(id, includingBindingClass)
+    }
+
+
+
+    /**
      * Support for multiple binding in single .kt file
      */
-    protected val importDirectives = syntheticImportDirectives.map { directive ->
+    protected val bindingImportDirectives = syntheticImportDirectives.map { directive ->
         directive.toFormattedDirective().toFormattedBindingName()
     }.toSet()
 
-    val hasMultipleBindingsInFile = importDirectives.size > 1
+    val hasMultipleBindingsInFile = bindingImportDirectives.size > 1
 
     private val bindingQualifiedClassNames = run {
-        importDirectives.map { bindingClassName ->
+        bindingImportDirectives.map { bindingClassName ->
             "${projectInfo.androidFacet?.getPackageName().orEmpty()}.databinding.$bindingClassName"
         }
     }
 
     /**
-     * Try to add binding declarations after last companion object (if we have one)
+     * Add binding declarations at the top of class body (after lBrace)
      */
-    fun tryToAddAfterCompanionObject(
+    fun addBindingAtTopOfClassBody(
         body: KtClassBody,
         vararg properties: KtProperty,
     ) {
-        if (body.allCompanionObjects.isNotEmpty()) {
-            val lastCompanionObject = body.allCompanionObjects.last()
-            val nextPsiElement = findNextNonWhitespaceElement(objectDeclaration = lastCompanionObject)
-            properties.forEach {
-                lastCompanionObject.body?.addBefore(it, nextPsiElement)
-            }
-        } else {
-            properties.forEach {
-                body.addAfter(it, body.lBrace)
-            }
+        properties.forEach {
+            body.addAfter(it, body.lBrace)
         }
     }
 

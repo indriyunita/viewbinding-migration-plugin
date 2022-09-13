@@ -14,29 +14,36 @@ class DelegateViewBindingPsiProcessor(
     projectInfo,
 ) {
     private companion object {
-        const val IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING = "android.viewbinding.library.fragment.viewBinding"
-        const val IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING = "android.viewbinding.library.activity.viewBinding"
+        const val IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING =
+            "android.viewbinding.library.fragment.viewBinding"
+        const val IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING =
+            "android.viewbinding.library.activity.viewBinding"
 
         const val HH_IMPORT_BINDING_PLUGIN =
             "ru.hh.shared.core.ui.framework.fragment_plugin.common.viewbinding.viewBindingPlugin"
 
-        const val HH_IMPORT_INFLATE_AND_BIND_FUN = "ru.hh.shared.core.ui.design_system.utils.widget.inflateAndBindView"
+        const val HH_IMPORT_INFLATE_AND_BIND_FUN =
+            "ru.hh.shared.core.ui.design_system.utils.widget.inflateAndBindView"
 
-        const val HH_IMPORT_CELLS_GET_VIEW_BINDING_FUN = "ru.hh.shared.core.ui.cells_framework.cells.getViewBinding"
+        const val HH_IMPORT_CELLS_GET_VIEW_BINDING_FUN =
+            "ru.hh.shared.core.ui.cells_framework.cells.getViewBinding"
 
         // Cells in hh.ru - wrapper for reducing boilerplate in delegates for RecyclerView
         const val HH_CELL_INTERFACE = "ru.hh.shared.core.ui.cells_framework.cells.interfaces.Cell"
     }
 
-    private val bindingClassName = importDirectives.firstOrNull()
+    /**
+     * Left for single case - HH cell processing
+     */
+    private val bindingClassName = bindingImportDirectives.firstOrNull()
 
     override fun processActivity(ktClass: KtClass) {
         val body = ktClass.getOrCreateBody()
-        importDirectives.forEach { bindingClassName ->
+        bindingImportDirectives.forEach { bindingClassName ->
             val text = bindingClassName.toDelegatePropertyFormat(hasMultipleBindingsInFile)
             val viewBindingDeclaration = projectInfo.psiFactory.createProperty(text)
 
-            tryToAddAfterCompanionObject(body, viewBindingDeclaration)
+            addBindingAtTopOfClassBody(body, viewBindingDeclaration)
 
             addImports(
                 IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING,
@@ -46,16 +53,14 @@ class DelegateViewBindingPsiProcessor(
 
     override fun processFragment(ktClass: KtClass) {
         val body = ktClass.getOrCreateBody()
-        importDirectives.forEach { bindingClassName ->
-            val text = bindingClassName.toDelegatePropertyFormat(hasMultipleBindingsInFile)
+        bindingsWithIncludeMap.forEach{ (bindingClassName, include) ->
+            val text = bindingClassName.toDelegatePropertyFormat(hasMultipleBindingsInFile, include)
             val viewBindingDeclaration = projectInfo.psiFactory.createProperty(text)
 
-            tryToAddAfterCompanionObject(body, viewBindingDeclaration)
-
-            addImports(
-                IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING,
-            )
+            addBindingAtTopOfClassBody(body, viewBindingDeclaration)
         }
+
+        addImports(IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING,)
     }
 
     override fun processView(ktClass: KtClass) {
@@ -64,11 +69,11 @@ class DelegateViewBindingPsiProcessor(
             ?.body?.children?.firstOrNull { it.text.contains("inflateView") }
         inflateViewExpression?.delete()
 
-        importDirectives.forEach { bindingClassName ->
+        bindingImportDirectives.forEach { bindingClassName ->
             val text = bindingClassName.toViewDelegatePropertyFormat(hasMultipleBindingsInFile)
             val viewBindingDeclaration = projectInfo.psiFactory.createProperty(text)
 
-            tryToAddAfterCompanionObject(body, viewBindingDeclaration)
+            addBindingAtTopOfClassBody(body, viewBindingDeclaration)
 
             addImports(
                 HH_IMPORT_INFLATE_AND_BIND_FUN,
@@ -97,7 +102,8 @@ class DelegateViewBindingPsiProcessor(
         withExpression
             ?.children?.firstOrNull()?.children?.getOrNull(1)
             ?.children?.firstOrNull()?.let { withArg ->
-                val newElement = projectInfo.psiFactory.createArgument("viewHolder.getViewBinding(${bindingClassName}::bind)")
+                val newElement =
+                    projectInfo.psiFactory.createArgument("viewHolder.getViewBinding(${bindingClassName}::bind)")
                 withArg.replace(newElement)
             }
         addImports(
