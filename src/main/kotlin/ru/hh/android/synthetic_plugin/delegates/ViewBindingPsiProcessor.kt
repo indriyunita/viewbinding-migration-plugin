@@ -1,9 +1,11 @@
 package ru.hh.android.synthetic_plugin.delegates
 
+import android.databinding.tool.ext.toCamelCase
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiParserFacade
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.codeStyle.CodeStyleManager
+import org.jetbrains.kotlin.lombok.utils.decapitalize
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
@@ -51,7 +53,17 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
                     val layoutName = importPath.replace("import ", "")
                         .replace(Const.KOTLINX_SYNTHETIC, "")
                         .replace(".*", "")
+                        .let {
+                            if (it.contains(".")) {
+                                // get only layout name, without view id
+                                it.substringBefore(".")
+                            } else {
+                                it
+                            }
+                        }
+
                     val bindingName = directive.toFormattedDirective().toFormattedBindingName()
+
                     put(layoutName, bindingName)
                 }
             }
@@ -61,10 +73,12 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
      * Return map of binding class name with its include data if any (includeId and includingBindingClass).
      * If there is more than one binding in a class, we try all the possible include configurations
      */
-    val bindingsWithIncludeMap: HashMap<String, IncludeData> by lazy {
+    private val bindingsWithIncludeMap: HashMap<String, IncludeData> by lazy {
         hashMapOf<String, IncludeData>().apply {
             // init
-            layoutAndBindingMap.values.forEach { bindingClass -> this[bindingClass] = IncludeData.NoInclude }
+            layoutAndBindingMap.values.forEach { bindingClass ->
+                this[bindingClass] = IncludeData.NoInclude
+            }
 
             projectInfo.file.virtualFilePath.getMainDirPath()?.let { mainDirPath ->
 
@@ -112,6 +126,24 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
         }
     }
 
+    /**
+     * Pair of binding class name and its include data.
+     * Sorted so that the binding class with NoInclude is last.
+     * Because addBindingAtTopOfClassBody() will add the binding at the top of the class body,
+     * and the last to be added will be at the top.
+     *
+     * For example:
+     *
+     * private val fragmentFirstBinding: FragmentFirstBinding by viewBinding()
+     * private val toolbarBinding: ToolbarBinding = fragmentFirstBinding.toolbarId
+     * private val contentMainBinding: ContentMainBinding = fragmentFirstBinding.conMain
+     *
+     * FragmentFirstBinding (with NoInclude) is the last to be added, so it will be at the top of the class body.
+     */
+    val sortedBindingsWithInclude: List<Pair<String, IncludeData>> by lazy {
+        bindingsWithIncludeMap.toList().sortedBy { it.second.order }
+    }
+
     private fun getIncludeData(
         mainDirPath: String,
         includedLayoutName: String,
@@ -123,11 +155,9 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
         if (id == ERROR_INCLUDE_NO_ID) {
             projectInfo.project.notifyError("No include id for layout $includedLayoutName in $includingLayoutName")
         }
-
         return if (id == null) IncludeData.NoInclude else
-            IncludeData.Include(id, includingBindingClass)
+            IncludeData.Include(id.toCamelCase().decapitalize(), includingBindingClass)
     }
-
 
 
     /**

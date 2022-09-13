@@ -39,28 +39,26 @@ class DelegateViewBindingPsiProcessor(
 
     override fun processActivity(ktClass: KtClass) {
         val body = ktClass.getOrCreateBody()
-        bindingImportDirectives.forEach { bindingClassName ->
-            val text = bindingClassName.toDelegatePropertyFormat(hasMultipleBindingsInFile)
-            val viewBindingDeclaration = projectInfo.psiFactory.createProperty(text)
-
-            addBindingAtTopOfClassBody(body, viewBindingDeclaration)
-
-            addImports(
-                IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING,
-            )
-        }
-    }
-
-    override fun processFragment(ktClass: KtClass) {
-        val body = ktClass.getOrCreateBody()
-        bindingsWithIncludeMap.forEach{ (bindingClassName, include) ->
+        sortedBindingsWithInclude.forEach { (bindingClassName, include) ->
             val text = bindingClassName.toDelegatePropertyFormat(hasMultipleBindingsInFile, include)
             val viewBindingDeclaration = projectInfo.psiFactory.createProperty(text)
 
             addBindingAtTopOfClassBody(body, viewBindingDeclaration)
         }
 
-        addImports(IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING,)
+        addImports(IMPORT_ACTIVITY_DELEGATE_VIEW_BINDING,)
+    }
+
+    override fun processFragment(ktClass: KtClass) {
+        val body = ktClass.getOrCreateBody()
+        sortedBindingsWithInclude.forEach { (bindingClassName, include) ->
+            val text = bindingClassName.toDelegatePropertyFormat(hasMultipleBindingsInFile, include)
+            val viewBindingDeclaration = projectInfo.psiFactory.createProperty(text)
+
+            addBindingAtTopOfClassBody(body, viewBindingDeclaration)
+        }
+
+        addImports(IMPORT_FRAGMENT_DELEGATE_VIEW_BINDING)
     }
 
     override fun processView(ktClass: KtClass) {

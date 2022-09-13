@@ -1,7 +1,14 @@
 package ru.hh.android.synthetic_plugin.model
 
-sealed class IncludeData {
-    data class Include(val includeId: String, val includingBindingClassName: String) : IncludeData()
+sealed class IncludeData(val order: Int) {
 
-    object NoInclude : IncludeData()
+
+    /**
+     * Example of [includeId]: "toolbarId"
+     * Example of [includingBindingClassName]: "ToolbarBinding"
+     */
+    data class Include(val includeId: String, val includingBindingClassName: String) : IncludeData(0)
+
+    object NoInclude : IncludeData(1)
+
 }

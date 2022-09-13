@@ -5,7 +5,6 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.xml.XmlAttributeValue
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtReferenceExpression
-import ru.hh.android.synthetic_plugin.delegates.log
 import ru.hh.android.synthetic_plugin.extensions.getShortBindingName
 import ru.hh.android.synthetic_plugin.utils.Const
 
