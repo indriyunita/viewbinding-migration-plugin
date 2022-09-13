@@ -3,9 +3,9 @@ package ru.hh.android.synthetic_plugin.model
 import android.databinding.tool.ext.toCamelCase
 import com.intellij.psi.PsiReference
 import com.intellij.psi.xml.XmlAttributeValue
-import com.intellij.util.containers.isNullOrEmpty
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtReferenceExpression
+import ru.hh.android.synthetic_plugin.delegates.log
 import ru.hh.android.synthetic_plugin.extensions.getShortBindingName
 import ru.hh.android.synthetic_plugin.utils.Const
 
@@ -37,9 +37,12 @@ sealed class AndroidViewContainer {
         viewBindingProperties: List<KtImportDirective>,
         hasMultipleBindingsInFile: Boolean,
     ): String {
-        val idCamelCase = xml.text
+
+        val idSnakeCase = xml.text
             .removeSurrounding("\"")
             .removePrefix(Const.ANDROID_VIEW_ID)
+
+        val idCamelCase = idSnakeCase
             .toCamelCase()
             .decapitalize()
 
@@ -50,7 +53,7 @@ sealed class AndroidViewContainer {
             }
         } else {
             val newPrefix = viewBindingProperties.first {
-                it.importPath?.pathStr?.contains(idCamelCase) == true
+                it.importPath?.pathStr?.contains(idSnakeCase) == true
             }.getShortBindingName()
 
             when {
