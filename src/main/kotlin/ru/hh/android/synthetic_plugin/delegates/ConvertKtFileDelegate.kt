@@ -24,9 +24,11 @@ object ConvertKtFileDelegate {
         val importsVisitor = SyntheticsImportsVisitor()
         projectInfo.file.accept(xmlRefsVisitor)
         projectInfo.file.accept(importsVisitor)
+
         val xmlViewRefs = xmlRefsVisitor.getResult()
         val syntheticImports = importsVisitor.getResult()
         val viewBindingPsiProcessor = getViewBindingPsiProcessor(projectInfo)
+        val layoutAndIds = viewBindingPsiProcessor.layoutAndIds
 
         val viewBindingDelegate = ViewBindingDelegate(
             projectInfo = projectInfo,
@@ -37,7 +39,7 @@ object ConvertKtFileDelegate {
         replaceSynthCallsToViews(
             psiFactory = projectInfo.psiFactory,
             xmlViewRefs = xmlViewRefs,
-            viewBindingProperties = viewBindingPsiProcessor.syntheticImportDirectives,
+            layoutAndIds = layoutAndIds,
             hasMultipleBindingsInFile = viewBindingPsiProcessor.hasMultipleBindingsInFile,
         )
         removeKotlinxSyntheticsImports(syntheticImports)
@@ -52,13 +54,13 @@ object ConvertKtFileDelegate {
     private fun replaceSynthCallsToViews(
         psiFactory: KtPsiFactory,
         xmlViewRefs: List<AndroidViewContainer>,
-        viewBindingProperties: List<KtImportDirective>,
+        layoutAndIds: Map<String, List<String>>,
         hasMultipleBindingsInFile: Boolean,
     ) {
         xmlViewRefs.forEach { refContainer ->
             val newElement: KtValueArgument = psiFactory.createArgument(
                 refContainer.getElementName(
-                    viewBindingProperties = viewBindingProperties,
+                    layoutAndIds = layoutAndIds,
                     hasMultipleBindingsInFile = hasMultipleBindingsInFile,
                 )
             )

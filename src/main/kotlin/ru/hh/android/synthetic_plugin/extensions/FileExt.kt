@@ -1,12 +1,12 @@
 package ru.hh.android.synthetic_plugin.extensions
 
-import java.io.File
-import kotlin.jvm.Throws
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import ru.hh.android.synthetic_plugin.utils.Const.ANDROID_VIEW_ID
+import ru.hh.android.synthetic_plugin.utils.Const.ANDROID_VIEW_ID_DECLARATION
 import ru.hh.android.synthetic_plugin.utils.Const.ERROR_INCLUDE_NO_ID
+import java.io.File
 
 /**
  * Read layout xml file and return id for included layout.
@@ -38,7 +38,7 @@ fun File.getIncludedViewId(includedLayout: String): String? {
                         return it.substring(ANDROID_VIEW_ID.length)
                     }
                 }
-                return if (id == ERROR_INCLUDE_NO_ID ) {
+                return if (id == ERROR_INCLUDE_NO_ID) {
                     ERROR_INCLUDE_NO_ID
                 } else null
             }
@@ -67,4 +67,27 @@ private fun getIncludedId(parser: XmlPullParser, includedLayout: String): String
         }
     }
     return null
+}
+
+fun File.getViewIds(): List<String> {
+    if (this.exists()) {
+        try {
+            val ids = mutableListOf<String>()
+            this.inputStream().bufferedReader().useLines {
+                it.map { line -> line.trim() }
+                    .filter { line -> line.contains(ANDROID_VIEW_ID_DECLARATION) }
+                    .forEach { line ->
+                        val id = line.substringAfter(ANDROID_VIEW_ID_DECLARATION)
+                            .substringBefore("\"")
+                        ids.add(id)
+                    }
+
+            }
+            return ids
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return emptyList()
+        }
+    }
+    return emptyList()
 }

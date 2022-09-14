@@ -2,6 +2,7 @@ package ru.hh.android.synthetic_plugin.utils
 
 object Const {
     const val ANDROID_VIEW_ID = "@+id/"
+    const val ANDROID_VIEW_ID_DECLARATION = "android:id=\"@+id/"
     const val KOTLINX_SYNTHETIC = "kotlinx.android.synthetic.main."
     const val CELL_WITH_VIEW_HOLDER = "with(viewHolder.itemView)"
     const val SET_CONTENT_VIEW_PREFIX = "setContentView"
