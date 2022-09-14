@@ -6,12 +6,11 @@
 
 ![Plugin usage](/docs/assets/Plugin_usage.gif)
 
-## Try plugin
-You can try download artifact from [Releases](https://github.com/hhru/hh-histories-view-binding-migration-plugin/releases),
-then install it from disk into your Android Studio Arctic Fox.
-
-### Attention!
-This plugin was tested only for Android Studio Arctic Fox.
+## Modifications
+This is a modified plugin from https://github.com/hhru/hh-histories-view-binding-migration-plugin.
+Modifications involved:
+- Incorporating another library https://github.com/yogacp/android-viewbinding for ViewBinding delegate 
+- Accommodating <include/> 
 
 ## Setup for local development
 
@@ -19,13 +18,29 @@ This plugin was tested only for Android Studio Arctic Fox.
 
 ```properties
 # Properties for launching Android Studio
-androidStudioPath=/Users/p.strelchenko/Library/Application Support/JetBrains/Toolbox/apps/AndroidStudio/ch-0/203.7935034/Android Studio.app
-androidStudioCompilerVersion=203.7717.56
+androidStudioPath=/Applications/Android Studio.app
+androidStudioCompilerVersion=212.5712.43
 ```
 
 Here:
 
 - `androidStudioPath` - Path to your local Android Studio;
-- `androidStudioCompilerVersion` - this version you could get from `About` screen of Android Studio
+- `androidStudioCompilerVersion` - this version you could get from `About` screen of Android Studio (take only MAJOR.MINOR.PATCH) version
 
-![Android Studio About](/docs/assets/Arctic_Fox_About.png)
+## Running/Testing the Plugin
+<img src="https://user-images.githubusercontent.com/25334720/190074841-020d3d8d-5f08-4cc2-81ae-79ea67727d21.png" width="400"/>
+Click "Run Plugin" on Gradle run toolbar menu. A new instance of Android Studio will appear with the plugin installed. Open a project and test the plugin on it.
+
+
+## Building and Using the Plugin
+<img src="https://user-images.githubusercontent.com/25334720/190076617-bce263a1-2f9e-438d-823c-b75981827139.png" width="300"/>
+You can build the jar from Gradle tasks. Then you can find the jar in build/libs folder
+
+<img src="https://user-images.githubusercontent.com/25334720/190077949-84ea576b-12b9-47c7-b943-462f29aa3f1d.png" width="400"/>
+
+Then install the plugin from disk.
+<img src="https://user-images.githubusercontent.com/25334720/190078152-905800c9-4d2b-4991-ab98-121394a5cfa8.png" width="400"/>
+
+
+
+This plugin has been tested on Android Studio Chipmunk | 2021.2.1 Patch 1
