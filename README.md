@@ -42,6 +42,32 @@ Then install the plugin from disk.
 
 <img src="https://user-images.githubusercontent.com/25334720/190078152-905800c9-4d2b-4991-ab98-121394a5cfa8.png" width="400"/>
 
-
-
 This plugin has been tested on Android Studio Chipmunk | 2021.2.1 Patch 1
+
+## Steps to Convert a Module from Synthetic to ViewBinding (Order Matters)
+1. Add dependency to android-viewbinding delegate lib(https://github.com/yogacp/android-viewbinding)
+
+Add this to your build.gradle:
+```
+allprojects {
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
+	}
+}
+```
+
+And in module's build,gradle:
+```dependencies {
+    ....
+    implementation 'com.github.yogacp:android-viewbinding:x.x.x'
+}
+```
+
+2. Convert ALL Activities and Fragments using the plugin (as of now, you can only apply one by one).
+
+3. Change module dependency from featuremodule.gradle to featuremoduleviewbing.gradle (suppose this file exists). The difference is this one removes `apply plugin: 'kotlin-android-extensions'` and adding `apply plugin: 'org.jetbrains.kotlin.android'` and `apply plugin: 'kotlin-parcelize'`.
+
+![image](https://user-images.githubusercontent.com/25334720/190081932-410b21e6-14a5-493b-b9ee-2760757a4abe.png)
+
+
