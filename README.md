@@ -39,6 +39,7 @@ You can build the jar from Gradle tasks. Then you can find the jar in build/libs
 <img src="https://user-images.githubusercontent.com/25334720/190077949-84ea576b-12b9-47c7-b943-462f29aa3f1d.png" width="400"/>
 
 Then install the plugin from disk.
+
 <img src="https://user-images.githubusercontent.com/25334720/190078152-905800c9-4d2b-4991-ab98-121394a5cfa8.png" width="400"/>
 
 
