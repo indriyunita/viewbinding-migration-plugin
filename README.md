@@ -10,7 +10,9 @@
 This is a modified plugin from https://github.com/hhru/hh-histories-view-binding-migration-plugin.
 Modifications involved:
 - Incorporating another library https://github.com/yogacp/android-viewbinding for ViewBinding delegate 
-- Accommodating <include/> 
+- Accommodating include
+
+![Usage with include](docs/assets/Usage_with_include.gif)
 
 ## Setup for local development
 
